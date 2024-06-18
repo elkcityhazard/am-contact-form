@@ -5,7 +5,10 @@ import (
 	"net/http"
 )
 
-func (m *Repo) HandleHealthcheck(w http.ResponseWriter, r *http.Request) {
+func (m *Repository) HandleHealthcheck(w http.ResponseWriter, r *http.Request) {
+
+	m.App.SessionManager.Put(r.Context(), "id", 1)
+
 	type Healthcheck struct {
 		Status  int    `json:"status"`
 		Version string `json:"version"`

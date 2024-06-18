@@ -5,8 +5,9 @@ import (
 	"net/http"
 )
 
-func (m *Repo) HandleFormSubmission(w http.ResponseWriter, r *http.Request) {
-	key := activeRouter.GetField(r, 0)
+func (m *Repository) HandleFormSubmission(w http.ResponseWriter, r *http.Request) {
+
+	key := m.App.Router.GetField(r, 0)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "id",

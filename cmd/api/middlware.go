@@ -1,4 +1,4 @@
-package handlers
+package main
 
 import (
 	"net/http"
@@ -9,12 +9,12 @@ func StripTrailingSlash(next http.Handler) http.Handler {
 
 		switch true {
 		case r.URL.Path == "/":
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(r.Context()))
 		case r.URL.Path[len(r.URL.Path)-1:] == "/":
 			redirectURL := r.URL.Path[0 : len(r.URL.Path)-1]
-			http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
+			http.Redirect(w, r.WithContext(r.Context()), redirectURL, http.StatusPermanentRedirect)
 		default:
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(r.Context()))
 
 		}
 
@@ -29,13 +29,13 @@ func AddDefaultHeaders(next http.Handler) http.Handler {
 			w.Header().Set("Cache-Control", "max-age=3600")
 		}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(r.Context()))
 
 	})
 }
 
 func InitMiddleware(next http.Handler) http.Handler {
-	return StripTrailingSlash(AddDefaultHeaders(next))
+	return LoadAndSaveSession(StripTrailingSlash(AddDefaultHeaders(next)))
 }
 
 //	RequiresAuth is for specific routes that we use on the handlers themselves.
@@ -46,20 +46,19 @@ func RequiresAuth(next http.HandlerFunc) http.HandlerFunc {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("id")
+		id := app.SessionManager.GetInt(r.Context(), "id")
 
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
+		if id == 0 {
+			http.Redirect(w, r.WithContext(r.Context()), "/login", http.StatusSeeOther)
 		}
 
-		if cookie.Value == "" {
-			http.Redirect(w, r, "/login", http.StatusUnauthorized)
-			return
-
-		}
-
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(r.Context()))
 
 	})
+}
+
+func LoadAndSaveSession(next http.Handler) http.Handler {
+
+	return app.SessionManager.LoadAndSave(next)
+
 }
