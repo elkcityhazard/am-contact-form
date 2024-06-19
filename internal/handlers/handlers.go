@@ -1,22 +1,23 @@
 package handlers
 
 import (
-	"database/sql"
-
 	"github.com/elkcityhazard/am-contact-form/internal/config"
+	"github.com/elkcityhazard/am-contact-form/internal/driver"
+	"github.com/elkcityhazard/am-contact-form/internal/repository"
+	"github.com/elkcityhazard/am-contact-form/internal/repository/dbrepo"
 )
 
 var Repo *Repository
 
 type Repository struct {
 	App *config.AppConfig
-	DB  *sql.DB
+	DB  repository.DatabaseInterface
 }
 
-func NewRepo(a *config.AppConfig, conn *sql.DB) *Repository {
+func NewRepo(a *config.AppConfig, conn *driver.DB) *Repository {
 	return &Repository{
 		App: a,
-		DB:  conn,
+		DB:  dbrepo.NewSqlDBRepo(a, conn),
 	}
 }
 

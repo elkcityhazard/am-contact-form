@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/elkcityhazard/am-contact-form/internal/config"
+	"github.com/elkcityhazard/am-contact-form/internal/driver"
 	"github.com/elkcityhazard/am-contact-form/internal/handlers"
 )
 
@@ -17,7 +20,15 @@ func main() {
 
 	app.SessionManager = NewSessionManager()
 
-	repo := handlers.NewRepo(app, nil)
+	fmt.Println("DSN ", os.Getenv("DSN"))
+
+	db, err := driver.ConnectSQL(os.Getenv("DSN"))
+
+	if err != nil {
+		panic(err)
+	}
+
+	repo := handlers.NewRepo(app, db)
 
 	handlers.NewHandlers(repo)
 

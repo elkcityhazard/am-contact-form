@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 func StripTrailingSlash(next http.Handler) http.Handler {
@@ -29,13 +31,15 @@ func AddDefaultHeaders(next http.Handler) http.Handler {
 			w.Header().Set("Cache-Control", "max-age=3600")
 		}
 
+		w.Header().Set("X-CSRF-TOKEN", nosurf.Token(r))
+
 		next.ServeHTTP(w, r.WithContext(r.Context()))
 
 	})
 }
 
 func InitMiddleware(next http.Handler) http.Handler {
-	return LoadAndSaveSession(StripTrailingSlash(AddDefaultHeaders(next)))
+	return LoadAndSaveSession(StripTrailingSlash(AddDefaultHeaders(NoSurf(next))))
 }
 
 //	RequiresAuth is for specific routes that we use on the handlers themselves.
@@ -61,4 +65,25 @@ func LoadAndSaveSession(next http.Handler) http.Handler {
 
 	return app.SessionManager.LoadAndSave(next)
 
+}
+
+func NoSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+
+	csrfHandler.ExemptFunc(func(r *http.Request) bool {
+		if r.Method == "POST" && r.URL.Path == "/api/v1/hello-world" {
+			return true
+		}
+
+		return false
+	})
+
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   app.IsProduction,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return csrfHandler
 }

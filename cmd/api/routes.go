@@ -25,8 +25,9 @@ type CtxKey struct{}
 func NewRouter() *Router {
 	rtr := &Router{}
 
+	rtr.routes = append(rtr.routes, rtr.NewRoute("GET", "/api/v1/token", handlers.HandleGetCSRFToken))
 	rtr.routes = append(rtr.routes, rtr.NewRoute("GET", "/api/v1/healthcheck", handlers.Repo.HandleHealthcheck))
-	rtr.routes = append(rtr.routes, rtr.NewRoute("GET", "/api/v1/([^/]+)", RequiresAuth(handlers.Repo.HandleFormSubmission)))
+	rtr.routes = append(rtr.routes, rtr.NewRoute("POST", "/api/v1/([^/]+)", handlers.Repo.HandleFormSubmission))
 
 	return rtr
 }
