@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -19,11 +20,7 @@ func (m *Repository) HandleFormSubmission(w http.ResponseWriter, r *http.Request
 
 	key := m.App.Router.GetField(r, 0)
 
-	payload["key"] = key
-
-	var msg models.Message
-
-	err := json.NewDecoder(r.Body).Decode(&msg)
+	token, err := r.Cookie("csrf_token")
 
 	if err != nil {
 		payload["error"] = err.Error()
@@ -36,9 +33,55 @@ func (m *Repository) HandleFormSubmission(w http.ResponseWriter, r *http.Request
 
 	}
 
-	if !nosurf.VerifyToken(nosurf.Token(r), msg.Token) {
-		fmt.Println(nosurf.Token(r), msg.Token)
-		fmt.Println("could not verify token")
+	if !nosurf.VerifyToken(nosurf.Token(r), token.Value) {
+		err = errors.New("could not validate token")
+
+		if err != nil {
+			payload["error"] = err.Error()
+
+			if err = json.NewEncoder(w).Encode(payload); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+
+		}
+
+	}
+
+	payload["key"] = key
+
+	payload["sent_token"] = token.Value
+	payload["actual_token"] = nosurf.Token(r)
+	payload["ip_address"] = ReadUserIP(r)
+	var msg models.Message
+
+	err = json.NewDecoder(r.Body).Decode(&msg)
+
+	if err != nil {
+		payload["error"] = err.Error()
+
+		if err = json.NewEncoder(w).Encode(payload); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+
+	}
+
+	msg.Token = token.Value
+
+	csrf_token, err := r.Cookie("csrf_token")
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if !nosurf.VerifyToken(nosurf.Token(r), csrf_token.Value) {
+		err := errors.New("bad request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+
 	}
 
 	msg.CreatedAt = time.Now()
@@ -99,4 +142,15 @@ func (m *Repository) HandleFormSubmission(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+}
+
+func ReadUserIP(r *http.Request) string {
+	IPAddress := r.Header.Get("X-Real-Ip")
+	if IPAddress == "" {
+		IPAddress = r.Header.Get("X-Forwarded-For")
+	}
+	if IPAddress == "" {
+		IPAddress = r.RemoteAddr
+	}
+	return IPAddress
 }
