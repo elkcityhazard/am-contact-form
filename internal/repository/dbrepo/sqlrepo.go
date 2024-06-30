@@ -34,9 +34,9 @@ func (s *sqlDBRepo) InsertMessage(msg *models.Message) (int64, error) {
 		defer close(idChan)
 		defer close(errorChan)
 
-		stmt := `INSERT INTO Message (created_at, updated_at, version, name, email, message_content) VALUES(NOW(), NOW(), 1, ?,?,?)`
+		stmt := `INSERT INTO Message (created_at, updated_at, version, name, email, message_content, ip_address) VALUES(NOW(), NOW(), 1, ?,?,?, ?)`
 
-		result, err := s.DB.SQL.ExecContext(ctx, stmt, msg.Name, msg.Email, msg.MessageContent)
+		result, err := s.DB.SQL.ExecContext(ctx, stmt, msg.Name, msg.Email, msg.MessageContent, msg.IP)
 
 		if err != nil {
 			errorChan <- err

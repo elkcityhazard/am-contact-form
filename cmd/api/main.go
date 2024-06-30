@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -15,15 +14,11 @@ import (
 var app *config.AppConfig
 
 func main() {
-
 	app = config.NewAppConfig()
 
 	app.SessionManager = NewSessionManager()
 
-	fmt.Println("DSN ", os.Getenv("DSN"))
-
 	db, err := driver.ConnectSQL(os.Getenv("DSN"))
-
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +27,7 @@ func main() {
 
 	handlers.NewHandlers(repo)
 
-	var router = NewRouter()
+	router := NewRouter()
 
 	app.Router = router
 
@@ -48,7 +43,6 @@ func main() {
 	if err := srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
-
 }
 
 func NewSessionManager() *scs.SessionManager {

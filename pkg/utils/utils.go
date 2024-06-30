@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,9 +29,7 @@ func NewUtil() *Util {
 func (u *Util) CreateHmacToken(data string) (string, error) {
 	h := hmac.New(sha256.New, []byte(u.hmacSecret))
 
-	timestamp := fmt.Sprintf("%d", time.Now().Add(time.Second*3000))
-
-	message := data + "|" + timestamp
+	message := data
 
 	_, err := io.WriteString(h, message)
 
@@ -48,17 +47,34 @@ func (u *Util) VerifyHmacToken(tokenWithDelimiter, delimiter string) bool {
 
 	var isEqual = false
 
-	td := strings.SplitN(tokenWithDelimiter, delimiter, 2)
+	td := strings.SplitN(tokenWithDelimiter, delimiter, 3)
 
-	if len(td) == 2 {
+	fmt.Println(len(td))
+	if len(td) == 3 {
 		t := td[0]
 		k := td[1]
+		e, err := strconv.ParseInt(td[2], 10, 64)
+
+		if err != nil {
+			fmt.Println("no int64 convert")
+			return false
+		}
+
+		fmt.Println(k)
+
+		if time.Now().Unix() > e {
+			fmt.Println("time out of bound")
+			return false
+		}
 
 		refToken, err := u.CreateHmacToken(k)
 
 		if err != nil {
+			fmt.Println("couldn't convert to token")
 			return false
 		}
+
+		fmt.Println(t, refToken)
 
 		isEqual = hmac.Equal([]byte(t), []byte(refToken))
 

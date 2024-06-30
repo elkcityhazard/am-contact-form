@@ -10,20 +10,18 @@ import (
 )
 
 func HandleGetCSRFToken(w http.ResponseWriter, r *http.Request) {
+	payload := map[string]interface{}{}
 
-	var payload = map[string]interface{}{}
-
-	var u = utils.NewUtil()
+	u := utils.NewUtil()
 
 	randomString := u.GenerateRandomString(24)
 
 	token, err := u.CreateHmacToken(randomString)
-
 	if err != nil {
 		go panic(err)
 	}
 
-	payload["token"] = fmt.Sprintf("%s|%s|%d", token, randomString, time.Now().Add(time.Hour).Unix())
+	payload["token"] = fmt.Sprintf("%s|%s|%d", token, randomString, time.Now().Add(time.Second*30).Unix())
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   "transaction",
@@ -37,5 +35,4 @@ func HandleGetCSRFToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 }

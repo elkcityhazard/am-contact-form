@@ -5,5 +5,6 @@ CREATE TABLE Message (
     version INT DEFAULT 1,
     name VARCHAR(255) DEFAULT "",
     email VARCHAR(255) NOT NULL UNIQUE,
-    message_content TEXT
+    message_content TEXT,
+    ip_address VARCHAR(15)
 );

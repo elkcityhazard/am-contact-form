@@ -11,4 +11,5 @@ type Message struct {
 	Email          string    `json:"email"`
 	MessageContent string    `json:"message_content"`
 	Token          string    `json:"token"`
+	IP             string    `json:"ip_address"`
 }
